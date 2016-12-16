@@ -11,10 +11,7 @@ import javafx.stage.Stage;
 import javafx.util.Pair;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main extends Application {
 
@@ -24,10 +21,9 @@ public class Main extends Application {
 
     Stage window;
     TextField tfOutput;
-    List<String> lines = new ArrayList();
-    String[] columns = new String[5];
 
-    StringBuilder message;
+    private List<String> lines;
+    private String[] columns = new String[]{"", "", "", "", "", "", "", ""};
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -50,46 +46,60 @@ public class Main extends Application {
 
     private void processInput() {
         parseInput();
-        parseLines();
-        countCharactersInColumns();
-        tfOutput.setText(message.toString());
-
+        linesToColumns();
+        String message = getMessageFromColumns();
+        tfOutput.setText(message);
     }
 
-    private void countCharactersInColumns() {
+    private String getMessageFromColumns() {
+        char c;
+        StringBuilder sb = new StringBuilder();
         for (String column : columns) {
-            for (int i = 0; i < column.length(); i++) {
-                message.append(getMostAbundantChar(column));
-            }
+            sb.append(mostAbundantCharIn(column));
         }
+        return sb.toString();
     }
 
-    private char getMostAbundantChar(String text) {
-        List<Map.Entry<Character, Integer>> charCounts = new ArrayList<>();
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            Integer count = charCounts.get(c);
-            if (count == null) {
-                charCounts.put(text.charAt(i), 0);
-            } else {
-                charCounts.put(text.charAt(i), count++);
+    private char mostAbundantCharIn(String column) {
+        Map<Character, Integer> charCounts = new HashMap<>();
+
+        // count chars
+        for (int i = 0; i < column.length(); i++) {
+            char c = column.charAt(i);
+            Integer oldValue = charCounts.put(c, 0);
+            if (oldValue != null) {
+                charCounts.put(c, oldValue + 1);
             }
         }
 
+        List<Map.Entry<Character, Integer>> countedChars = new ArrayList<>();
+
+        // check
+        for (Map.Entry<Character, Integer> entry : charCounts.entrySet()) {
+            System.out.println(entry.getKey() + " : " + entry.getValue());
+            countedChars.add(entry);
+        }
+        // count
+        countedChars.sort((o1, o2) -> o1.getValue().compareTo(o2.getValue()));
+
+        char mostAbundantChar = countedChars.get(0).getKey();
+        System.out.println("most abundant: " + mostAbundantChar);
+        return mostAbundantChar;
+
     }
 
-    private void parseLines() {
+    private void linesToColumns() {
         for (String line : lines) {
-            for (int i = 0; i < 5; i++) {
-                StringBuilder sb = new StringBuilder(columns[i]);
-                sb.append(line.charAt(i));
+            for (int i = 0; i < columns.length; i++) {
+                columns[i] = new StringBuilder(columns[i]).append(line.charAt(i)).toString();
             }
         }
-
     }
+
 
     private void parseInput() {
         String line;
+        lines = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(new File("input.txt")))) {
             line = br.readLine();
             while (line != null) {
